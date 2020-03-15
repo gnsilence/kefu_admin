@@ -3,8 +3,18 @@
     <div class="me-head">
       <span>
         <i class="el-icon-reading"></i>
-        <span slot="title">知识库管理  <span style="color: #666; font-size: 18px">({{tableData.total}}条知识)</span></span>
+        <span slot="title">知识库管理 </span>
       </span>
+        <el-button-group>
+       <template v-for="item in total" >
+           <el-button :class="{'el-button--primary': item.id + '' == tableData.platform + ''}" @click="onTogglePlatform(item.id)" :key="item.id" size="mini">
+            {{item.title}} ({{item.count}})
+            </el-button>
+       </template>
+      </el-button-group>  
+       <el-col :span="5">
+          <el-input @change="onRefresh" placeholder="请输入关键词" prefix-icon="el-icon-search" v-model="keyword" clearable></el-input>
+        </el-col>
        <el-button @click="createDialogFormVisible = true" size="mini">添 加</el-button>
     </div>
     <el-divider />
@@ -86,8 +96,8 @@
         :total="tableData.total">
       </el-pagination>
     </el-row>
-    <CreateDialog :complete="getKnowledgeList" :dialogFormVisible.sync="createDialogFormVisible" />
-    <EditDialog :formData="editItem" :complete="getKnowledgeList" :dialogFormVisible.sync="editDialogFormVisible" />
+    <CreateDialog :complete="onRefresh" :dialogFormVisible.sync="createDialogFormVisible" />
+    <EditDialog :formData="editItem" :complete="onRefresh" :dialogFormVisible.sync="editDialogFormVisible" />
   </div>
 </template>
 
@@ -103,22 +113,39 @@ export default {
   },
   data() {
     return {
+      keyword: "",
       tableData: {
         list: [],
         page_on: 1,
         page_size: 10,
         total: 0,
+        keyword: "",
+        platform: 1,
       },
+      total: [],
       createDialogFormVisible: false,
       editDialogFormVisible: false,
       loading: true,
       editItem: null
     }
   },
+  computed: {
+    platformConfig(){
+      return this.$store.state.platformConfig || []
+    }
+  },
   created(){
-    setTimeout( ()=> this.getKnowledgeList(), 500)
+    setTimeout( ()=> {
+      this.getKnowledgeList()
+      this.getTotal()
+    }, 500)
+    
   },
   methods: {
+    onRefresh(){
+      this.getTotal()
+      this.getKnowledgeList()
+    },
     // 行号
     indexMethod(index) {
       return (this.tableData.page_on - 1) * this.tableData.page_size + index +1;
@@ -142,6 +169,11 @@ export default {
         });
       })
     },
+    // 切换显示平台
+    onTogglePlatform(pid){
+      this.tableData.platform = parseInt(pid)
+      this.getKnowledgeList(1)
+    },
     // 编辑
     edit(item){
       this.editItem = item
@@ -160,8 +192,9 @@ export default {
     // 获取数据
     getKnowledgeList(index){
       if(index) this.tableData.page_on = index
-      const {page_on, page_size} = this.tableData
-      axios.post('/knowledge/list', {page_on, page_size})
+      const {page_on, page_size, platform} = this.tableData
+      const keyword = this.keyword
+      axios.post('/knowledge/list', {page_on, page_size, platform, keyword})
       .then(response => {
           this.loading = false
           this.tableData = response.data.data
@@ -170,6 +203,13 @@ export default {
         this.loading = false
         this.$message.error(error.response.data.message)
       });
+    },
+    // 获取统计数据
+    getTotal(){
+      axios.get('/knowledge/total')
+      .then(response => {
+          this.total = response.data.data
+      })
     },
   },
 };
