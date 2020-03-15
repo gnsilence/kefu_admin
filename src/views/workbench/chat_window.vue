@@ -83,7 +83,7 @@
           <template v-if="item.biz_type == 'timeout'">
             <div class="system">
               <em>{{$formatFromNowDate(item.timestamp)}}</em>
-              <span>用户长时间无应答，会话结束</span>
+              <span>{{item.payload}}</span>
             </div>
           </template>
 

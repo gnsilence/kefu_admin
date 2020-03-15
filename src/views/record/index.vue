@@ -24,7 +24,7 @@
             ></el-option>
           </el-select>
         </el-col>
-        <el-col :span="6.5">
+        <el-col :span="5.5">
           <el-date-picker
             v-model="selectDate"
             align="right"
@@ -34,8 +34,11 @@
             :picker-options="pickerOptions">
           </el-date-picker>
         </el-col>
-        <el-col style="width: 120px;">
+        <el-col :span="5.5">
           <el-checkbox v-model="isDeWeighting" label="去重目标客户" @change="refreshRecord" border></el-checkbox>
+        </el-col>
+        <el-col :span="5.5">
+          <el-checkbox v-model="isReception" label="只显示未接待客户" @change="refreshRecord" border></el-checkbox>
         </el-col>
       </el-row>
     </div>
@@ -53,6 +56,12 @@
       <el-table-column prop="nickname" label="目标客户">
          <template slot-scope="scope">
            <el-tag type="success">{{scope.row.nickname}}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="is_reception" label="是否已接待">
+         <template slot-scope="scope">
+           <el-tag v-show="scope.row.is_reception == 0" type="danger">未接待</el-tag>
+           <el-tag v-show="scope.row.is_reception == 1" type="success">已接待</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="transfer_account" label="满意度">
@@ -130,6 +139,7 @@ export default {
     return {
       loading: true,
       isDeWeighting: false,
+      isReception: false,
       selectDate: Date.now(),
       tableData: {
         list: [],
@@ -244,11 +254,12 @@ export default {
         page_size,
         cid: this.selectCustomerId,
         date: moment(this.selectDate).format("YYYY-MM-DD"),
-        is_de_weighting: this.isDeWeighting
+        is_de_weighting: this.isDeWeighting,
+        is_reception: this.isReception
       })
       .then(response => {
         this.loading = false
-        this.tableData = response.data
+        this.tableData = response.data.data
       })
       .catch(error => {
         this.loading = false
